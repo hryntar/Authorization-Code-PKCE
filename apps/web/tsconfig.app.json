@@ -1,0 +1,14 @@
+{
+  "extends": "@time-tracking-app/typescript-config/tsconfig.react.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": ["./src/shared/components/*"],
+      "@lib/*": ["./src/shared/lib/*"],
+      "@ui/*": ["./src/shared/components/ui/*"],
+      "@hooks/*": ["./src/shared/hooks/*"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}

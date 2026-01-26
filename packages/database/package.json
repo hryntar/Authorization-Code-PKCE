@@ -1,0 +1,39 @@
+{
+  "name": "@time-tracking-app/database",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./dist/*.js"
+    },
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules .turbo"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.13",
+    "@prisma/client": "^6.19.2",
+    "dotenv": "^17.2.4"
+  },
+  "devDependencies": {
+    "@time-tracking-app/eslint-config": "workspace:*",
+    "@time-tracking-app/typescript-config": "workspace:*",
+    "@types/node": "^24.10.11",
+    "prisma": "^6.19.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "extends": "@time-tracking-app/typescript-config/tsconfig.node.base.json",
+  "include": ["vite.config.ts"]
+}

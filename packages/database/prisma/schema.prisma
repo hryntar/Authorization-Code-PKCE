@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserWorkFormat {
+  FULL_TIME
+  PART_TIME
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id              String         @id @default(uuid())
+  email           String?        @unique
+  realName        String?        @map("real_name")
+  username        String?
+  discordId       String?        @map("discord_id")
+  status          UserStatus
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  workFormat      UserWorkFormat @map("work_format")
+  projects        UserProject[]
+  managedProjects Project[]      @relation("ProjectManager")
+
+  @@map("user")
+}
+
+enum ProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+model Project {
+  id               String        @id @default(uuid())
+  name             String
+  emoji            String?
+  status           ProjectStatus
+  startDate        DateTime?     @map("start_date")
+  endDate          DateTime?     @map("end_date")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  projectManagerId String?       @map("project_manager_id")
+  avatarUrl        String?       @map("avatar_url")
+
+  projectManager User?         @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  users          UserProject[]
+
+  @@map("project")
+}
+
+enum UserProjectStatus {
+  ACTIVE
+  INACTIVE
+  ON_HOLD
+}
+
+enum UserProjectPosition {
+  DEVELOPER
+  DESIGNER
+  PROJECT_MANAGER
+  QA
+  TEAM_LEAD
+  TECH_LEAD
+  HELPER
+  OTHER
+}
+
+model UserProject {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  projectId String              @map("project_id")
+  status    UserProjectStatus
+  position  UserProjectPosition @default(DEVELOPER)
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("user_project")
+}
