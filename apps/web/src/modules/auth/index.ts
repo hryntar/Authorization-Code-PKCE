@@ -1,22 +1,28 @@
-/**
- * Auth Module
- * Public API exports for the authentication module
- */
-
 // Components
-// export { LoginForm } from './components/LoginForm';
+export { LoginPage, DashboardPage, AuthCallbackPage } from './components';
 
 // Hooks
-// export { useAuth } from './hooks/useAuth';
+export { useGoogleAuth, useCurrentUser, useLogout, useSetAuthUser, authKeys } from './hooks';
 
 // Types
-// export type { User, LoginCredentials, RegisterData, AuthState } from './types/auth.types';
+export type { AuthUser, AuthState, AuthResponse, PKCEChallenge } from './types/auth.types';
 
 // API
-// export { authApi } from './api/auth.api';
-
-// Utils
-// export { saveToken, getToken, removeToken, isTokenValid } from './utils/auth.utils';
+export { exchangeCodeForToken, fetchCurrentUser } from './api';
 
 // Store
-// export { authStore } from './stores/auth.store';
+export { AuthProvider, useAuthContext } from './stores';
+
+// Utils
+export {
+  generatePKCEChallenge,
+  storePKCEVerifier,
+  retrievePKCEVerifier,
+  clearPKCEVerifier,
+  generateOAuthState,
+  storeOAuthState,
+  validateAndClearOAuthState,
+  saveUser,
+  getUser,
+  removeUser,
+} from './utils';
