@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '@time-tracking-app/database';
+import { randomBytes, createHash } from 'crypto';
 
 interface GoogleTokenResponse {
   access_token: string;
@@ -27,6 +28,7 @@ interface GoogleUserInfo {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly oauthClient: OAuth2Client;
+  private static readonly REFRESH_TOKEN_EXPIRY_DAYS = 7;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -144,5 +146,72 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  async createRefreshToken(userId: string): Promise<string> {
+    const rawToken = randomBytes(64).toString('hex');
+    const tokenHash = this.hashToken(rawToken);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + AuthService.REFRESH_TOKEN_EXPIRY_DAYS);
+
+    await this.prisma.refreshToken.create({
+      data: { tokenHash, userId, expiresAt },
+    });
+
+    this.logger.log(`Refresh token created for user ${userId}`);
+    return rawToken;
+  }
+
+  async rotateRefreshToken(
+    oldRawToken: string
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const oldHash = this.hashToken(oldRawToken);
+
+    const existing = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash: oldHash },
+      include: { user: true },
+    });
+
+    if (!existing) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (existing.expiresAt < new Date()) {
+      await this.prisma.refreshToken.delete({ where: { id: existing.id } });
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // Delete old token (rotation)
+    await this.prisma.refreshToken.delete({ where: { id: existing.id } });
+
+    // Issue new tokens
+    const accessToken = this.issueJwtToken(existing.userId, existing.user.email!);
+    const refreshToken = await this.createRefreshToken(existing.userId);
+
+    this.logger.log(`Refresh token rotated for ${existing.user.email}`);
+    return { accessToken, refreshToken };
+  }
+
+  async revokeRefreshToken(rawToken: string): Promise<void> {
+    const tokenHash = this.hashToken(rawToken);
+
+    await this.prisma.refreshToken.deleteMany({
+      where: { tokenHash },
+    });
+
+    this.logger.log('Refresh token revoked');
+  }
+
+  async revokeAllUserRefreshTokens(userId: string): Promise<void> {
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
+
+    this.logger.log(`All refresh tokens revoked for user ${userId}`);
   }
 }
